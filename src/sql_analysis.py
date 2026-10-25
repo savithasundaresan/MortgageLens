@@ -2,6 +2,7 @@ from __future__ import annotations
 import duckdb
 import pandas as pd
 
+
 def run_sql_summaries(df: pd.DataFrame) -> dict[str, pd.DataFrame]:
     """Run reproducible SQL summaries against an in-memory DuckDB relation."""
     con = duckdb.connect(database=":memory:")
@@ -12,7 +13,8 @@ def run_sql_summaries(df: pd.DataFrame) -> dict[str, pd.DataFrame]:
                COUNT(*) FILTER (WHERE action_taken = 'Originated') AS originated,
                COUNT(*) FILTER (WHERE action_taken = 'Denied') AS denied,
                COUNT(*) FILTER (WHERE action_taken = 'Originated') * 1.0 /
-                 NULLIF(COUNT(*) FILTER (WHERE action_taken IN ('Originated','Denied')), 0) AS approval_rate
+                   NULLIF(COUNT(*) FILTER (
+                       WHERE action_taken IN ('Originated','Denied')), 0) AS origination_share
         FROM applications
         GROUP BY state
         ORDER BY eligible_applications DESC
@@ -26,9 +28,9 @@ def run_sql_summaries(df: pd.DataFrame) -> dict[str, pd.DataFrame]:
             GROUP BY application_year
         )
         SELECT application_year, eligible, originated,
-               originated * 1.0 / NULLIF(eligible, 0) AS approval_rate,
+               originated * 1.0 / NULLIF(eligible, 0) AS origination_share,
                LAG(originated * 1.0 / NULLIF(eligible, 0))
-                 OVER (ORDER BY application_year) AS prior_year_rate
+                   OVER (ORDER BY application_year) AS prior_year_rate
         FROM yearly ORDER BY application_year
     """).df()
     con.close()
