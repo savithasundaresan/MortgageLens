@@ -1051,12 +1051,16 @@ with tab_report:
             "'Train and evaluate models' first. You can still generate reports without model results."
         )
     if current_cv is None:
-        st.caption("Five-fold cross-validation will appear in the detailed report after you run it.")
+        st.caption(
+            "Five-fold cross-validation will appear in the detailed report after you run it."
+        )
 
     one_col, detail_col = st.columns(2)
     with one_col:
         st.markdown("**One-page portfolio report**")
-        st.write("Project objective, dataset, methods, current model metrics, and key limitations.")
+        st.write(
+            "Project objective, dataset, methods, current model metrics, and key limitations."
+        )
         st.download_button(
             "Download one-page report · PDF",
             data=generate_pdf(report_context, detailed=False),
@@ -1073,7 +1077,9 @@ with tab_report:
         )
     with detail_col:
         st.markdown("**Detailed technical report**")
-        st.write("Outcome counts, missingness, demographic comparisons, model metrics, confusion matrices, cross-validation, and SQL summaries.")
+        st.write(
+            "Outcome counts, missingness, demographic comparisons, model metrics, confusion matrices, cross-validation, and SQL summaries."
+        )
         st.download_button(
             "Download technical report · PDF",
             data=generate_pdf(report_context, detailed=True),
@@ -1097,8 +1103,8 @@ with tab_report:
         else "N/A"
     )
     st.markdown(
-        f"- **Source:** {source}\\n"
-        f"- **Filtered records:** {len(filtered):,}\\n"
-        f"- **Originated + denied:** {report_context['eligible']:,}\\n"
+        f"- **Source:** {source}\n"
+        f"- **Filtered records:** {len(filtered):,}\n"
+        f"- **Originated + denied:** {report_context['eligible']:,}\n"
         f"- **Origination share:** {report_share}"
     )
