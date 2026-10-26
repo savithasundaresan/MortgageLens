@@ -25,7 +25,7 @@ from src.sql_analysis import run_sql_summaries
 from src.reporting import build_report_context, generate_html, generate_pdf
 
 BASE_DIR = Path(__file__).resolve().parent
-SYNTHETIC_DATA = BASE_DIR / "data" / "mortgage_applications_sample.csv"
+# SYNTHETIC_DATA = BASE_DIR / "data" / "mortgage_applications_sample.csv"
 HMDA_DATA = BASE_DIR / "data" / "processed" / "mortgage_applications_hmda.csv"
 
 st.set_page_config(page_title="MortgageLens", page_icon="🏠", layout="wide")
