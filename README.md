@@ -4,7 +4,7 @@ A portfolio project demonstrating Python, Pandas, NumPy, SQL, statistics, machin
 
 ## Important data and interpretation note
 
-The included dataset is **synthetic demonstration data**, not real borrower data and not evidence about any actual lender or demographic group. It makes the app runnable immediately. Replace it with a properly downloaded public HMDA dataset for a real-data analysis.
+MortgageLens supports a bundled synthetic demonstration dataset, a prepared public HMDA dataset when supplied in the expected `data/processed/` location, and analysis-ready CSV uploads. Synthetic records are not real borrower data or evidence about any actual lender or demographic group. Public HMDA records describe reported application outcomes and should not be interpreted as creditworthiness or loan-performance labels.
 
 HMDA public data: https://www.consumerfinance.gov/data-research/hmda/
 HMDA data field definitions: https://ffiec.cfpb.gov/documentation/publications/loan-level-datasets/lar-data-fields/
@@ -133,3 +133,15 @@ For actual HMDA data, first map the downloaded field names and codes to this pro
 - Do not claim a group difference proves discrimination.
 - Check sample sizes, missingness, confounding, data quality, and legal context.
 - For regulated analysis, consult appropriate fair-lending and legal experts.
+
+
+## 5. Automatic portfolio reports
+
+Open the **Portfolio Report** tab in the Streamlit dashboard to download four report variants based on the currently selected data source and filters:
+
+- One-page portfolio summary: PDF or standalone HTML
+- Detailed technical report: PDF or standalone HTML
+
+The detailed report includes action-outcome counts, remaining missingness, demographic group comparisons, available model metrics and confusion matrices, cross-validation results if run, and DuckDB SQL summaries. To include model results, first run **Train and evaluate models** in the Model Evaluation tab; run **Run cross-validation** to include cross-validation. If filters change, rerun the analyses before generating reports. Reports explicitly state that the model predicts recorded originated-versus-denied outcomes, not creditworthiness or default, and that descriptive group differences do not establish discrimination.
+
+The report files are generated from the current dashboard state; metrics are not hard-coded. Install the dependencies in `requirements.txt` after applying this update.
