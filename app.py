@@ -13,6 +13,8 @@ import pandas as pd
 import plotly.express as px
 import streamlit as st
 import hashlib
+import base64
+import fitz  # PyMuPDF: render PDF pages as images for reliable in-app preview
 
 from src.data_prep import clean_applications, summarize_data_quality
 from src.analysis import approval_summary, denial_reason_summary
@@ -1051,6 +1053,12 @@ with tab_report:
             "Five-fold cross-validation will appear in the detailed report after you run it."
         )
 
+    # Generate each report once so the view links and download buttons use identical content.
+    summary_pdf = generate_pdf(report_context, detailed=False)
+    summary_html = generate_html(report_context, detailed=False)
+    technical_pdf = generate_pdf(report_context, detailed=True)
+    technical_html = generate_html(report_context, detailed=True)
+
     one_col, detail_col = st.columns(2)
     with one_col:
         st.markdown("**One-page portfolio report**")
@@ -1059,14 +1067,14 @@ with tab_report:
         )
         st.download_button(
             "Download one-page report · PDF",
-            data=generate_pdf(report_context, detailed=False),
+            data=summary_pdf,
             file_name="mortgagelens_portfolio_summary.pdf",
             mime="application/pdf",
             use_container_width=True,
         )
         st.download_button(
             "Download one-page report · HTML",
-            data=generate_html(report_context, detailed=False),
+            data=summary_html,
             file_name="mortgagelens_portfolio_summary.html",
             mime="text/html",
             use_container_width=True,
@@ -1078,18 +1086,60 @@ with tab_report:
         )
         st.download_button(
             "Download technical report · PDF",
-            data=generate_pdf(report_context, detailed=True),
+            data=technical_pdf,
             file_name="mortgagelens_technical_report.pdf",
             mime="application/pdf",
             use_container_width=True,
         )
         st.download_button(
             "Download technical report · HTML",
-            data=generate_html(report_context, detailed=True),
+            data=technical_html,
             file_name="mortgagelens_technical_report.html",
             mime="text/html",
             use_container_width=True,
         )
+
+    st.markdown("**View report here**")
+    preview_kind = st.radio(
+        "Report format",
+        ["One-page HTML", "Detailed HTML", "One-page PDF", "Detailed PDF"],
+        horizontal=True,
+        key="report_preview_kind",
+    )
+    preview_map = {
+        "One-page HTML": (summary_html, "text/html"),
+        "Detailed HTML": (technical_html, "text/html"),
+        "One-page PDF": (summary_pdf, "application/pdf"),
+        "Detailed PDF": (technical_pdf, "application/pdf"),
+    }
+    preview_bytes, preview_mime = preview_map[preview_kind]
+    if preview_mime == "text/html":
+        # Render HTML directly in the Streamlit page instead of opening a data: URL.
+        st.components.v1.html(
+            preview_bytes.decode("utf-8"),
+            height=850,
+            scrolling=True,
+        )
+    else:
+        # Browser PDF plugins often block embedded data: URLs in Streamlit.
+        # Render each PDF page to a PNG and show it directly in the app instead.
+        try:
+            pdf_document = fitz.open(stream=preview_bytes, filetype="pdf")
+            st.caption(
+                f"PDF preview · {pdf_document.page_count} page(s). "
+                "Use the download button above if you need the original PDF file."
+            )
+            for page_number, page in enumerate(pdf_document, start=1):
+                pixmap = page.get_pixmap(matrix=fitz.Matrix(1.5, 1.5), alpha=False)
+                page_png = pixmap.tobytes("png")
+                st.image(page_png, caption=f"Page {page_number}", use_container_width=True)
+            pdf_document.close()
+        except Exception as exc:
+            st.error(f"Could not preview the PDF: {exc}")
+            st.info(
+                "The PDF download button above still provides the original report. "
+                "Make sure PyMuPDF is installed (`pip install pymupdf`)."
+            )
 
     st.divider()
     st.markdown("**Report preview**")
