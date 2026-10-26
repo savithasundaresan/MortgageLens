@@ -3,7 +3,8 @@ import pandas as pd
 from src.reporting import build_report_context, generate_html, generate_pdf
 
 
-def _sample():
+def _test_frame():
+    """Small deterministic fixture for testing report generation."""
     return pd.DataFrame({
         "application_id": ["a", "b", "c", "d"],
         "application_year": [2024, 2024, 2024, 2024],
@@ -26,7 +27,7 @@ def _sample():
 
 
 def test_reports_generate_pdf_and_html_formats():
-    context = build_report_context(_sample(), "Test source", "Synthetic test data")
+    context = build_report_context(_test_frame(), "Test source", "Test fixture data")
     assert context["rows"] == 4
     assert context["eligible"] == 4
     assert context["origination_share"] == 0.5
@@ -35,7 +36,7 @@ def test_reports_generate_pdf_and_html_formats():
 
 
 def test_detailed_report_notes_missing_model_and_cv_results():
-    context = build_report_context(_sample(), "Test source", "Synthetic test data")
+    context = build_report_context(_test_frame(), "Test source", "Test fixture data")
     html = generate_html(context, detailed=True).decode("utf-8")
     assert "No inferential hypothesis test is calculated" in html
     assert "Held-out model evaluation" in html

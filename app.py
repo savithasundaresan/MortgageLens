@@ -25,7 +25,6 @@ from src.sql_analysis import run_sql_summaries
 from src.reporting import build_report_context, generate_html, generate_pdf
 
 BASE_DIR = Path(__file__).resolve().parent
-# SYNTHETIC_DATA = BASE_DIR / "data" / "mortgage_applications_sample.csv"
 HMDA_DATA = BASE_DIR / "data" / "processed" / "mortgage_applications_hmda.csv"
 
 st.set_page_config(page_title="MortgageLens", page_icon="🏠", layout="wide")
@@ -45,9 +44,9 @@ def read_csv_file(path_or_buffer):
 
 
 st.sidebar.header("Data source")
-source_options = ["Synthetic sample"]
+source_options = []
 if HMDA_DATA.exists():
-    source_options.insert(0, "2024 California HMDA data")
+    source_options.append("2024 California HMDA data")
 source_options.append("Upload a CSV")
 source = st.sidebar.radio("Choose dataset", source_options)
 
@@ -59,9 +58,6 @@ try:
             "Purchased loans are reported as a separate action outcome and are not "
             "counted as new applications in the originated-versus-denied analysis."
         )
-    elif source == "Synthetic sample":
-        raw = read_csv_file(SYNTHETIC_DATA)
-        source_caption = "Source: bundled synthetic demonstration dataset; not real borrower records."
     else:
         uploaded = st.sidebar.file_uploader("Upload analysis-ready CSV", type=["csv"])
         if uploaded is None:
