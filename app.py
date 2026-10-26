@@ -22,6 +22,7 @@ from src.modeling import (
     compare_dti_sensitivity,
 )
 from src.sql_analysis import run_sql_summaries
+from src.reporting import build_report_context, generate_html, generate_pdf
 
 BASE_DIR = Path(__file__).resolve().parent
 SYNTHETIC_DATA = BASE_DIR / "data" / "mortgage_applications_sample.csv"
@@ -143,13 +144,14 @@ st.caption(
     "This is not a market-wide approval rate."
 )
 
-tab_overview, tab_fair, tab_model, tab_sql, tab_data = st.tabs(
+tab_overview, tab_fair, tab_model, tab_sql, tab_data, tab_report = st.tabs(
     [
         "Overview & EDA",
         "Fair Lending Review",
         "Model Evaluation",
         "SQL Analytics",
         "Data Quality & Export",
+        "Portfolio Report",
     ]
 )
 
@@ -1013,4 +1015,90 @@ with tab_data:
         filtered.to_csv(index=False).encode("utf-8"),
         file_name="mortgagelens_filtered.csv",
         mime="text/csv",
+    )
+
+
+with tab_report:
+    st.subheader("Generate portfolio-ready reports")
+    st.write(
+        "Create a concise one-page portfolio summary and a detailed technical report "
+        "from the currently selected dataset and filters. Reports include model results "
+        "and cross-validation only when those analyses have been run for the current filters."
+    )
+    st.caption(
+        "HTML is suitable for viewing in a browser or printing to PDF. PDF files are generated directly. "
+        "Both formats include limitations and responsible-use notes."
+    )
+
+    current_results = st.session_state.get("model_results")
+    if st.session_state.get("model_results_signature") != current_model_signature:
+        current_results = None
+    current_cv = st.session_state.get("cv_results")
+    if st.session_state.get("cv_results_signature") != current_model_signature:
+        current_cv = None
+
+    report_context = build_report_context(
+        filtered=filtered,
+        source=source,
+        source_caption=source_caption,
+        model_results=current_results,
+        cv_results=current_cv,
+    )
+
+    if current_results is None:
+        st.info(
+            "For the strongest report, open Model Evaluation and click "
+            "'Train and evaluate models' first. You can still generate reports without model results."
+        )
+    if current_cv is None:
+        st.caption("Five-fold cross-validation will appear in the detailed report after you run it.")
+
+    one_col, detail_col = st.columns(2)
+    with one_col:
+        st.markdown("**One-page portfolio report**")
+        st.write("Project objective, dataset, methods, current model metrics, and key limitations.")
+        st.download_button(
+            "Download one-page report · PDF",
+            data=generate_pdf(report_context, detailed=False),
+            file_name="mortgagelens_portfolio_summary.pdf",
+            mime="application/pdf",
+            use_container_width=True,
+        )
+        st.download_button(
+            "Download one-page report · HTML",
+            data=generate_html(report_context, detailed=False),
+            file_name="mortgagelens_portfolio_summary.html",
+            mime="text/html",
+            use_container_width=True,
+        )
+    with detail_col:
+        st.markdown("**Detailed technical report**")
+        st.write("Outcome counts, missingness, demographic comparisons, model metrics, confusion matrices, cross-validation, and SQL summaries.")
+        st.download_button(
+            "Download technical report · PDF",
+            data=generate_pdf(report_context, detailed=True),
+            file_name="mortgagelens_technical_report.pdf",
+            mime="application/pdf",
+            use_container_width=True,
+        )
+        st.download_button(
+            "Download technical report · HTML",
+            data=generate_html(report_context, detailed=True),
+            file_name="mortgagelens_technical_report.html",
+            mime="text/html",
+            use_container_width=True,
+        )
+
+    st.divider()
+    st.markdown("**Report preview**")
+    report_share = (
+        f"{report_context['origination_share']:.1%}"
+        if report_context["origination_share"] is not None
+        else "N/A"
+    )
+    st.markdown(
+        f"- **Source:** {source}\\n"
+        f"- **Filtered records:** {len(filtered):,}\\n"
+        f"- **Originated + denied:** {report_context['eligible']:,}\\n"
+        f"- **Origination share:** {report_share}"
     )
